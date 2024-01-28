@@ -1,0 +1,25 @@
+FROM python:3.8
+
+# Установка SSH сервера
+RUN apt-get update && apt-get install -y openssh-server
+RUN mkdir /var/run/sshd
+RUN echo 'root:password' | chpasswd   # TODO: здесь указан логин и пароль от root юзера
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# Добавление нового пользователя
+RUN useradd -ms /bin/bash anton
+RUN echo 'anton:test' | chpasswd   # FIXME: необходимо поменять имя на свое (также заменить пароль)
+
+# Установка Python зависимостей
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r /app/requirements.txt
+
+# Копирование приложения
+COPY . /app
+WORKDIR /app
+
+# Открытие порта для SSH
+EXPOSE 22
+
+# Запуск SSH сервера и приложения
+CMD ["/usr/sbin/sshd", "-D"]
